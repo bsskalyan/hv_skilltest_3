@@ -93,7 +93,7 @@ resource "aws_security_group" "app_sg" {
     from_port   = 3001
     to_port     = 3004
     protocol    = "tcp"
-    self        = true
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   egress {

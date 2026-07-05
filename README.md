@@ -1,36 +1,82 @@
-# Multi-Service Node.js E-commerce App (Docker + Terraform + AWS)
+# Multi-Service Node.js E-commerce App (Terraform + Docker + AWS)
 
-This repository deploys a 5-service Node.js application:
-- `user-service` (port 3001)
-- `products-service` (port 3002)
-- `orders-service` (port 3003)
-- `cart-service` (port 3004)
-- `frontend-service` (port 3000, exposed publicly via EC2 port 80)
+This is my DevOps skill test submission.
 
-Terraform provisions AWS networking and EC2, then `user_data` installs Docker and runs all containers.
+I deployed a Node.js e-commerce application with 5 Dockerized services:
+- user-service on port 3001
+- products-service on port 3002
+- orders-service on port 3003
+- cart-service on port 3004
+- frontend-service on port 3000 (published on EC2 port 80)
 
-## 1) Build and Test Locally
+DockerHub username used in this project: bsskalyan
 
-From repository root:
+## What I built
+
+1. 5 separate Node.js services with their own Dockerfiles
+2. Terraform infrastructure on AWS
+3. EC2 bootstrap script (user-data) to install Docker and run all containers
+4. Public frontend access using EC2 public IP/DNS
+
+## Project folders
+
+- services/user-service
+- services/products-service
+- services/orders-service
+- services/cart-service
+- services/frontend-service
+- infra/terraform
+- docker-compose.yml
+
+## Prerequisites
+
+- Docker
+- Terraform 1.5+
+- AWS credentials configured locally
+- DockerHub account
+
+## Step-by-step process I followed
+
+### 1) Created application services and Dockerfiles
+
+Each service contains:
+- index.js
+- package.json
+- Dockerfile
+
+Sample responses:
+- user-service -> User Service Running
+- products-service -> Products Service Running
+- orders-service -> Orders Service Running
+- cart-service -> Cart Service Running
+- frontend-service -> Frontend is Live
+
+### 2) Built and tested locally
+
+From root folder:
 
 ```bash
 docker compose up --build
 ```
 
-Validate endpoints:
-- Frontend: http://localhost:3000
-- User: http://localhost:3001
-- Products: http://localhost:3002
-- Orders: http://localhost:3003
-- Cart: http://localhost:3004
+Checked locally:
+- http://localhost:3000
+- http://localhost:3001
+- http://localhost:3002
+- http://localhost:3003
+- http://localhost:3004
 
-Expected sample messages include `"User Service Running"` and `"Frontend is Live"`.
-
-## 2) Tag and Push Images to DockerHub
-
-DockerHub username is prefilled as `bsskalyan`.
+Stopped local containers:
 
 ```bash
+docker compose down
+```
+
+### 3) Tagged and pushed images to DockerHub
+
+```bash
+docker login
+
 docker build -t bsskalyan/user-service:latest ./services/user-service
 docker build -t bsskalyan/products-service:latest ./services/products-service
 docker build -t bsskalyan/orders-service:latest ./services/orders-service
@@ -44,62 +90,90 @@ docker push bsskalyan/cart-service:latest
 docker push bsskalyan/frontend-service:latest
 ```
 
-PowerShell shortcut from repo root:
+Optional shortcut:
 
 ```powershell
 ./scripts/build-and-push.ps1
 ```
 
-## 3) Provision Infrastructure with Terraform
+### 4) Provisioned AWS infrastructure using Terraform
+
+Terraform folder:
 
 ```bash
 cd infra/terraform
+```
+
+Initialized and applied:
+
+```bash
 terraform init
-```
-
-Create your variables file:
-
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
-
-`terraform.tfvars` is already prefilled in this repo with `dockerhub_username = "bsskalyan"`.
-
-Edit `terraform.tfvars` and set at least:
-- `dockerhub_username = "bsskalyan"`
-- optionally `key_name` for SSH
-- optionally `ssh_cidr` to your public IP `/32`
-
-Deploy:
-
-```bash
 terraform apply -auto-approve
 ```
 
-## 4) Access and Verify Deployment
+This creates:
+- VPC
+- public subnet
+- internet gateway + route table
+- security group
+- EC2 instance (Ubuntu 22.04)
 
-Print outputs:
+### 5) Deployed containers on EC2 using user-data
+
+User-data script actions:
+- installs Docker
+- starts and enables Docker service
+- creates a Docker network
+- pulls all 5 images from DockerHub
+- runs all 5 containers
+- maps frontend from container port 3000 to host port 80
+
+### 6) Verified deployment and accessibility
+
+Terraform outputs:
 
 ```bash
 terraform output
+terraform output frontend_url
+terraform output instance_public_ip
+terraform output instance_public_dns
 ```
 
-Use `frontend_url` in a browser. You should see **Frontend is Live**.
+Opened frontend URL in browser and verified message:
+- Frontend is Live
 
-Optional backend checks from your machine:
-- `http://<PUBLIC_IP>:3001`
-- `http://<PUBLIC_IP>:3002`
-- `http://<PUBLIC_IP>:3003`
-- `http://<PUBLIC_IP>:3004`
+Backend verification from EC2:
 
-## Notes
+```bash
+ssh -i <your-key.pem> ubuntu@<PUBLIC_IP>
+docker ps
+curl http://localhost:3001
+curl http://localhost:3002
+curl http://localhost:3003
+curl http://localhost:3004
+```
 
-- Uses Ubuntu 22.04 AMI.
-- Security Group allows:
-  - inbound `80` (public)
-  - inbound `22` (configurable by `ssh_cidr`)
-  - internal `3001-3004` for service communication.
-- All infrastructure is reproducible via `terraform apply`.
+## Security group rules
+
+- inbound 80 from 0.0.0.0/0 for public frontend
+- inbound 22 from configured ssh_cidr
+- inbound 3001-3004 allowed only within the same security group (internal service communication)
+- all outbound traffic allowed
+
+## Terraform outputs included
+
+- instance_public_ip
+- instance_public_dns
+- frontend_url
+
+## Reproducibility
+
+This deployment is reproducible with:
+
+```bash
+terraform init
+terraform apply -auto-approve
+```
 
 ## Cleanup
 
@@ -107,14 +181,10 @@ Optional backend checks from your machine:
 terraform destroy -auto-approve
 ```
 
-## Exam Submission Checklist
+## Final checklist before submission
 
-- `docker compose up --build` works locally.
-- All 5 images are pushed under `bsskalyan/*` and are public.
-- `terraform apply -auto-approve` completes successfully.
-- `terraform output frontend_url` opens and shows **Frontend is Live**.
-- Backend checks return sample responses:
-  - `http://<PUBLIC_IP>:3001`
-  - `http://<PUBLIC_IP>:3002`
-  - `http://<PUBLIC_IP>:3003`
-  - `http://<PUBLIC_IP>:3004`
+- all five Docker images are pushed under bsskalyan and public
+- terraform apply completes without error
+- frontend_url opens from browser
+- frontend shows Frontend is Live
+- backend containers are running and reachable from EC2 using curl
