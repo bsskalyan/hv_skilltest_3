@@ -139,6 +139,11 @@ terraform output instance_public_ip
 terraform output instance_public_dns
 ```
 
+Actual output values from my deployment:
+- frontend_url = http://23.20.15.49
+- instance_public_ip = 23.20.15.49
+- instance_public_dns = ec2-23-20-15-49.compute-1.amazonaws.com
+
 Opened frontend URL in browser and verified message:
 - Frontend is Live
 
@@ -152,6 +157,39 @@ curl http://localhost:3002
 curl http://localhost:3003
 curl http://localhost:3004
 ```
+
+Actual verification done on the EC2 instance:
+
+`docker ps` showed all 5 containers running:
+- frontend-service
+- user-service
+- products-service
+- orders-service
+- cart-service
+
+Container port mappings confirmed:
+- frontend-service -> 80:3000
+- user-service -> 3001:3001
+- products-service -> 3002:3002
+- orders-service -> 3003:3003
+- cart-service -> 3004:3004
+
+Curl checks from inside EC2:
+- `curl http://localhost` -> Frontend is Live
+- `curl http://localhost:3001` -> User Service Running
+- `curl http://localhost:3002` -> Products Service Running
+- `curl http://localhost:3003` -> Orders Service Running
+- `curl http://localhost:3004` -> Cart Service Running
+
+## Screenshots included
+
+I also included screenshots in the `screenshots` folder as supporting proof:
+- `frontend.png` -> local frontend test from the Ubuntu VM
+- `user service.png` -> local user service response
+- `product service.png` -> local products service response
+- `order service.png` -> local orders service response
+- `cart service.png` -> local cart service response
+- `output_terrafrom.png` -> EC2 verification showing `docker ps` and service curl results
 
 ## Security group rules
 
