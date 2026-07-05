@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3001:3001"
+
+  products-service:
+    build: ./services/products-service
+    ports:
+      - "3002:3002"
+
+  orders-service:
+    build: ./services/orders-service
+    ports:
+      - "3003:3003"
+
+  cart-service:
+    build: ./services/cart-service
+    ports:
+      - "3004:3004"
+
+  frontend-service:
+    build: ./services/frontend-service
+    depends_on:
+      - user-service
+      - products-service
+      - orders-service
+      - cart-service
+    ports:
+      - "3000:3000"
+    environment:
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCTS_SERVICE_URL: http://products-service:3002
+      ORDERS_SERVICE_URL: http://orders-service:3003
+      CART_SERVICE_URL: http://cart-service:3004

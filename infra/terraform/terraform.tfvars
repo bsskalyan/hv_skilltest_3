@@ -1,0 +1,7 @@
+aws_region         = "us-east-1"
+project_name       = "ecommerce-skilltest"
+instance_type      = "t3.micro"
+key_name           = ""
+ssh_cidr           = "0.0.0.0/0"
+dockerhub_username = "bsskalyan"
+image_tag          = "latest"

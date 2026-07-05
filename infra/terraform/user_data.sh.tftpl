@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euxo pipefail
+
+apt-get update -y
+apt-get install -y docker.io
+
+systemctl enable docker
+systemctl start docker
+
+usermod -aG docker ubuntu || true
+
+docker network create ecommerce-net || true
+
+for image in ${user_image} ${products_image} ${orders_image} ${cart_image} ${frontend_image}; do
+  docker pull "$image"
+done
+
+docker rm -f user-service products-service orders-service cart-service frontend-service || true
+
+docker run -d --name user-service --restart always --network ecommerce-net -p 3001:3001 ${user_image}
+docker run -d --name products-service --restart always --network ecommerce-net -p 3002:3002 ${products_image}
+docker run -d --name orders-service --restart always --network ecommerce-net -p 3003:3003 ${orders_image}
+docker run -d --name cart-service --restart always --network ecommerce-net -p 3004:3004 ${cart_image}
+
+docker run -d --name frontend-service --restart always --network ecommerce-net \
+  -e USER_SERVICE_URL=http://user-service:3001 \
+  -e PRODUCTS_SERVICE_URL=http://products-service:3002 \
+  -e ORDERS_SERVICE_URL=http://orders-service:3003 \
+  -e CART_SERVICE_URL=http://cart-service:3004 \
+  -p 80:3000 ${frontend_image}
